@@ -4,9 +4,9 @@
  *   bun run release            # patch bump
  *   bun run release minor      # or major, or an explicit 1.2.3
  *
- * Writes release/reasoning-search-<version>.zip containing main.js, manifest.json and styles.css.
- * Commit, tag (`git tag <version>`, no "v" prefix, as Obsidian expects) and attach the three
- * files to a GitHub release yourself.
+ * Also writes release/reasoning-search-<version>.zip (main.js, manifest.json, styles.css) for
+ * manual installs. To publish, commit and push a bare version tag; .github/workflows/release.yml
+ * then builds and attaches the three files to a GitHub release.
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { $ } from "bun";
@@ -94,4 +94,5 @@ await mkdir("release", { recursive: true });
 const zip = `release/${manifest.id}-${version}.zip`;
 const files = ["main.js", "manifest.json", "styles.css"];
 await writeFile(zip, storedZip(await Promise.all(files.map(async (name) => ({ name, data: new Uint8Array(await readFile(name)) })))));
-console.log(`\nReleased ${version} -> ${zip}`);
+console.log(`\nBumped to ${version} and wrote ${zip}. To publish:`);
+console.log(`  git commit -am "Release ${version}" && git tag ${version} && git push origin HEAD ${version}`);
