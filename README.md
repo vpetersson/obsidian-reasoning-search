@@ -127,13 +127,19 @@ The plugin has also been run inside Obsidian 1.14.5 (Linux desktop) against Olla
 
 ```sh
 bun install
-bun run dev         # rebuild main.js on change
+bun run dev         # rebuild dist/main.js on change
 bun test            # chunker, index, glob, JSON parsing, search pipeline with a fake endpoint
 bun run typecheck
 bun run build
 ```
 
-To try it in a vault, symlink or copy `main.js`, `manifest.json` and `styles.css` into `<vault>/.obsidian/plugins/reasoning-search/` and enable the plugin.
+The build writes everything Obsidian needs to `dist/`: `main.js`, plus copies of `manifest.json` and `styles.css`. To try it in a vault, symlink that folder in as the plugin, then enable it under *Community plugins*:
+
+```sh
+ln -s "$PWD/dist" "<vault>/.obsidian/plugins/reasoning-search"
+```
+
+`bun run dev` copies `manifest.json` and `styles.css` once at startup. If you edit either of them, restart it.
 
 ### Releasing
 
@@ -149,7 +155,7 @@ To publish, commit and push a tag with the bare version, with no `v` prefix:
 git commit -am "Release 0.1.1" && git tag 0.1.1 && git push origin HEAD 0.1.1
 ```
 
-The [release workflow](.github/workflows/release.yml) checks that the tag matches `manifest.json`, then runs the type check, tests and build. It publishes a GitHub release with `main.js`, `manifest.json` and `styles.css` attached as separate files. That's the layout Obsidian's community plugin store and [BRAT](https://github.com/TfTHacker/obsidian42-brat) install from; they don't use the zip.
+The [release workflow](.github/workflows/release.yml) checks that the tag matches `manifest.json`, then runs the type check, tests and build. It publishes a GitHub release with the three files from `dist/` attached separately. That's the layout Obsidian's community plugin store and [BRAT](https://github.com/TfTHacker/obsidian42-brat) install from; they don't use the zip.
 
 ### Listing in the community plugin store
 
