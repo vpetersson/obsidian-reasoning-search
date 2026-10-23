@@ -1,13 +1,36 @@
-import { type App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { type App, type DropdownComponent, Notice, PluginSettingTab, Setting, type TextComponent } from "obsidian";
+import { ModelNotFoundError } from "./llm";
 import type ReasoningSearchPlugin from "./main";
 import { DEFAULT_SETTINGS } from "./settings-defaults";
 
 export class ReasoningSearchSettingTab extends PluginSettingTab {
+  private modelText?: TextComponent;
+  private modelDropdown?: DropdownComponent;
+
   constructor(
     app: App,
     private readonly plugin: ReasoningSearchPlugin,
   ) {
     super(app, plugin);
+  }
+
+  /** Fill the model dropdown from the endpoint's `GET /models`. Returns the ids, or [] if listing failed. */
+  private async loadModels(): Promise<string[]> {
+    const d = this.modelDropdown;
+    if (!d) return [];
+    let models: string[] = [];
+    let label: string;
+    try {
+      models = await this.plugin.llmClient().listModels();
+      label = models.length ? "Pick a model…" : "(endpoint lists no models)";
+    } catch {
+      label = "(couldn't list models)";
+    }
+    d.selectEl.empty();
+    d.addOption("", label);
+    for (const m of models) d.addOption(m, m);
+    d.setValue(models.includes(this.plugin.settings.model) ? this.plugin.settings.model : "");
+    return models;
   }
 
   display(): void {
@@ -27,21 +50,32 @@ export class ReasoningSearchSettingTab extends PluginSettingTab {
           .onChange(async (v) => {
             s.baseUrl = v.trim() || DEFAULT_SETTINGS.baseUrl;
             await this.plugin.saveSettings();
+            void this.loadModels();
           }),
       );
 
     new Setting(containerEl)
       .setName("Model")
-      .setDesc("apple-foundationmodel for apfel, or e.g. llama3.1:8b for Ollama.")
-      .addText((t) =>
-        t
-          .setPlaceholder(DEFAULT_SETTINGS.model)
+      .setDesc("Pick one of the models the endpoint serves, or type a name. apfel serves apple-foundationmodel; for Ollama, any model you've pulled.")
+      .addText((t) => {
+        this.modelText = t;
+        t.setPlaceholder(DEFAULT_SETTINGS.model)
           .setValue(s.model)
           .onChange(async (v) => {
             s.model = v.trim() || DEFAULT_SETTINGS.model;
             await this.plugin.saveSettings();
-          }),
-      );
+          });
+      })
+      .addDropdown((d) => {
+        this.modelDropdown = d;
+        d.onChange(async (v) => {
+          if (!v) return;
+          s.model = v;
+          this.modelText?.setValue(v);
+          await this.plugin.saveSettings();
+        });
+      });
+    void this.loadModels();
 
     new Setting(containerEl)
       .setName("API key")
@@ -79,12 +113,16 @@ export class ReasoningSearchSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Test connection")
-      .setDesc("Sends a one-word prompt to the endpoint.")
+      .setDesc("Checks that the endpoint serves the model, then sends it a one-word prompt.")
       .addButton((b) =>
         b.setButtonText("Test").onClick(async () => {
           b.setDisabled(true);
           const started = performance.now();
           try {
+            const models = await this.loadModels();
+            if (models.length && !models.includes(s.model)) {
+              throw new ModelNotFoundError(s.model, s.baseUrl.trim().replace(/\/+$/, ""), models);
+            }
             await this.plugin.llmClient().chat([{ role: "user", content: "Reply with the single word OK." }], { maxTokens: 5 });
             new Notice(`Reasoning search: endpoint OK (${Math.round(performance.now() - started)} ms)`);
           } catch (err) {
