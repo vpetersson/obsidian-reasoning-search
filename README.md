@@ -4,6 +4,10 @@ Ask your vault a question in plain language, like *"that time the server lost a 
 
 Everything runs locally. The plugin talks to any OpenAI-compatible chat endpoint on your machine. The default target is Apple's on-device Foundation Models via [apfel](https://apfel.franzai.com/), and Ollama and LM Studio work unchanged. There are no embeddings, no vector database, no native add-ons and no sidecar processes.
 
+## Why
+
+This plugin was built to search a vault that holds a large number of documents. I file my scanned paperwork into Obsidian with [obsidian-document-organizer](https://github.com/vpetersson/obsidian-document-organizer). It OCRs each scan and uses a local Ollama model to write a titled, tagged note for it. Once a vault has thousands of these notes, keyword search stops being enough: you remember what a document was about, not the words it uses. Reasoning search fills that gap with the same local models, so the documents never leave the machine.
+
 ## How it works
 
 1. **Retrieval (local).** Each markdown note is split by heading. Notes without headings, and very long sections, are split into ~800-character windows. The chunks go into an in-memory BM25 index that is built when Obsidian starts and kept current on every create, modify, delete and rename.
