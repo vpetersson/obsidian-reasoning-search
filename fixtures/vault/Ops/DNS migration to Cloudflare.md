@@ -1,0 +1,1 @@
+Moved all zones from the registrar's DNS to Cloudflare. TTLs lowered to 300 a week before. MX records double-checked.

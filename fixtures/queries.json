@@ -1,0 +1,8 @@
+[
+  { "question": "that disk failure on the hosting box", "expect": "Ops/Hetzner SX outage 2025-03.md" },
+  { "question": "how long did it take to recover everything from backup last time", "expect": "Ops/Restic backup setup.md" },
+  { "question": "where did we eat custard tarts on holiday", "expect": "Travel/Lisbon trip.md" },
+  { "question": "what broke when we bumped the cluster version", "expect": "Ops/Kubernetes upgrade 1.30.md" },
+  { "question": "the bread recipe with the overnight rise", "expect": "Recipes/Sourdough.md" },
+  { "question": "who wants to own the invoicing project", "expect": "Work/1-1 with Sam.md" }
+]

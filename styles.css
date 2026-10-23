@@ -1,0 +1,31 @@
+.reasoning-search-modal .reasoning-search-status {
+  padding: var(--size-4-2) var(--size-4-3);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.reasoning-search-modal .reasoning-search-status.is-busy {
+  color: var(--text-accent);
+}
+
+.reasoning-search-modal .reasoning-search-heading {
+  color: var(--text-muted);
+}
+
+.reasoning-search-modal .reasoning-search-item .suggestion-note {
+  white-space: normal;
+}
+
+.reasoning-search-modal .reasoning-search-score {
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+  padding: 0 var(--size-4-1);
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
+.reasoning-search-modal .reasoning-search-score.is-bm25 {
+  font-style: italic;
+}

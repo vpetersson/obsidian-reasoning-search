@@ -1,0 +1,21 @@
+{
+  "name": "obsidian-reasoning-search",
+  "version": "0.1.0",
+  "description": "LLM-reranked free-text search over your vault, using a local OpenAI-compatible endpoint (Apple Foundation Models via apfel, Ollama, LM Studio).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/main.ts --outfile main.js --format cjs --external obsidian --target browser",
+    "dev": "bun build src/main.ts --outfile main.js --format cjs --external obsidian --target browser --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "eval": "bun run scripts/eval.ts",
+    "release": "bun run scripts/release.ts"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "obsidian": "1.5.7",
+    "typescript": "^7.0.2"
+  }
+}

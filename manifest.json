@@ -1,0 +1,10 @@
+{
+  "id": "reasoning-search",
+  "name": "Reasoning Search",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Ask a natural-language question and get back the notes that answer it. BM25 retrieval plus LLM query expansion and reranking against a local OpenAI-compatible endpoint (Apple Foundation Models via apfel, Ollama, LM Studio).",
+  "author": "Viktor Petersson",
+  "authorUrl": "https://github.com/vpetersson",
+  "isDesktopOnly": true
+}

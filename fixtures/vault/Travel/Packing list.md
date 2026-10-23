@@ -1,0 +1,1 @@
+Passport, chargers, adapter, headphones, rain jacket.

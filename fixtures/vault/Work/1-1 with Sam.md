@@ -1,0 +1,1 @@
+Talked about career growth, wants to lead the billing rewrite. Follow up on conference budget.
