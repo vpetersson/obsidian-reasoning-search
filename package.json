@@ -5,8 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun build src/main.ts --outfile main.js --format cjs --external obsidian --target browser",
-    "dev": "bun build src/main.ts --outfile main.js --format cjs --external obsidian --target browser --watch",
+    "build": "bun build src/main.ts --outfile dist/main.js --format cjs --external obsidian --target browser && cp manifest.json styles.css dist/",
+    "dev": "mkdir -p dist && cp manifest.json styles.css dist/ && bun build src/main.ts --outfile dist/main.js --format cjs --external obsidian --target browser --watch",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "eval": "bun run scripts/eval.ts",

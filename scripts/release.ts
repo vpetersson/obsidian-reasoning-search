@@ -4,7 +4,7 @@
  *   bun run release            # patch bump
  *   bun run release minor      # or major, or an explicit 1.2.3
  *
- * Also writes release/reasoning-search-<version>.zip (main.js, manifest.json, styles.css) for
+ * Also writes release/reasoning-search-<version>.zip (the contents of dist/) for
  * manual installs. To publish, commit and push a bare version tag; .github/workflows/release.yml
  * then builds and attaches the three files to a GitHub release.
  */
@@ -93,6 +93,6 @@ await $`bun run build`;
 await mkdir("release", { recursive: true });
 const zip = `release/${manifest.id}-${version}.zip`;
 const files = ["main.js", "manifest.json", "styles.css"];
-await writeFile(zip, storedZip(await Promise.all(files.map(async (name) => ({ name, data: new Uint8Array(await readFile(name)) })))));
+await writeFile(zip, storedZip(await Promise.all(files.map(async (name) => ({ name, data: new Uint8Array(await readFile(`dist/${name}`)) })))));
 console.log(`\nBumped to ${version} and wrote ${zip}. To publish:`);
 console.log(`  git commit -am "Release ${version}" && git tag ${version} && git push origin HEAD ${version}`);
