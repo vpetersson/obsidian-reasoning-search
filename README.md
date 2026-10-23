@@ -100,10 +100,11 @@ bun run eval -- --vault ~/Notes --queries mine.json
 bun run eval -- --base-url http://127.0.0.1:9/v1   # dead endpoint: every query falls back to BM25
 ```
 
-Results on Ollama 0.33 (top-3 hits out of 6 questions):
+Results (top-3 hits out of 6 questions):
 
 | Model | Fixture vault | + 2,000 distractors |
 | --- | --- | --- |
+| apple-foundationmodel (apfel) | 5/6 | 4/6 |
 | qwen3.5:9b | 6/6 | 6/6 |
 | gemma2:9b | 6/6 | 6/6 |
 | llama3:8b | 5/6 | 5/6 |
@@ -112,7 +113,9 @@ Results on Ollama 0.33 (top-3 hits out of 6 questions):
 - Plain BM25 finds none of the "no shared keywords" targets.
 - A typical search takes 3–6 s: about 1 s for expansion and 1.5–5 s for the rerank.
 - The most common miss is *"custard tarts"* → *pastéis de nata in Lisbon*, which needs the model to know what pastéis de nata are.
-- These results have not been measured against apfel or Apple Foundation Models yet.
+- The Ollama rows use Ollama 0.33.
+- On apfel (Apple Foundation Models), a search takes about 2.5 s. With N=40 the rerank is split into batches; it never overflowed the 4,096-token window.
+- apfel's on-device model writes more generic expansions than the 8–9B Ollama models. In the padded vault, *"disk failure on the hosting box"* then expands to *"server disk"* and *"storage issue"*. Distractor notes built from those exact words fill every candidate slot, so the target never reaches the reranker. When the target is a candidate, apfel's rerank put it first in every passing case.
 
 The plugin has also been run inside Obsidian 1.14.5 (Linux desktop) against Ollama with `qwen3.5:9b`. It loads with no console errors and indexes the fixture vault in under 10 ms. The modal finds the Hetzner note at score 95, and <kbd>Enter</kbd> opens it at the matching heading. Create, modify, rename and delete re-index within 5 ms. With the endpoint pointed at a dead port, the modal shows a Notice naming the URL and returns keyword results instead of crashing. The type definitions are pinned to the Obsidian 1.5 API, so the build can't silently depend on newer APIs.
 
