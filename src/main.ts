@@ -17,7 +17,9 @@ export default class ReasoningSearchPlugin extends Plugin {
   readonly index = new Bm25Index();
   indexReady: Promise<void> = Promise.resolve();
   private isExcluded: (path: string) => boolean = () => false;
-  readonly scheduleRebuild = debounce(() => void this.rebuildIndex(), 1000, true);
+  readonly scheduleRebuild = debounce(() => {
+    this.indexReady = this.rebuildIndex().then(() => undefined);
+  }, 1000, true);
 
   override async onload(): Promise<void> {
     await this.loadSettings();
@@ -29,7 +31,7 @@ export default class ReasoningSearchPlugin extends Plugin {
     });
 
     this.app.workspace.onLayoutReady(() => {
-      this.indexReady = this.rebuildIndex();
+      this.indexReady = this.rebuildIndex().then(() => undefined);
       // Registered after layout-ready so the initial vault load doesn't fire a create per file.
       this.registerEvent(this.app.vault.on("create", (f) => void this.indexFile(f)));
       this.registerEvent(this.app.vault.on("modify", (f) => void this.indexFile(f)));
@@ -54,16 +56,16 @@ export default class ReasoningSearchPlugin extends Plugin {
     });
   }
 
-  async rebuildIndex(): Promise<void> {
+  async rebuildIndex(): Promise<{ notes: number; chunks: number; ms: number }> {
     const started = performance.now();
     this.isExcluded = compileExcludes(this.settings.excludeGlobs);
     this.index.clear();
     const files = this.app.vault.getMarkdownFiles().filter((f) => !this.isExcluded(f.path));
     const contents = await Promise.all(files.map((f) => this.app.vault.cachedRead(f).catch(() => "")));
     files.forEach((f, i) => this.index.setNote(f.path, chunkNote(f.path, contents[i] ?? "")));
-    console.debug(
-      `[reasoning-search] indexed ${this.index.noteCount} notes / ${this.index.chunkCount} chunks in ${Math.round(performance.now() - started)} ms`,
-    );
+    const stats = { notes: this.index.noteCount, chunks: this.index.chunkCount, ms: Math.round(performance.now() - started) };
+    console.debug(`[reasoning-search] indexed ${stats.notes} notes / ${stats.chunks} chunks in ${stats.ms} ms`);
+    return stats;
   }
 
   private async indexFile(file: TAbstractFile): Promise<void> {
