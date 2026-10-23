@@ -171,13 +171,24 @@ export class ReasoningSearchSettingTab extends PluginSettingTab {
         });
       });
 
-    new Setting(containerEl)
+    const indexSetting = new Setting(containerEl)
       .setName("Index")
       .setDesc(`${this.plugin.index.noteCount} notes, ${this.plugin.index.chunkCount} chunks indexed.`)
       .addButton((b) =>
         b.setButtonText("Rebuild").onClick(async () => {
-          await this.plugin.rebuildIndex();
-          this.display();
+          b.setDisabled(true).setButtonText("Rebuilding…");
+          try {
+            const ready = this.plugin.rebuildIndex();
+            this.plugin.indexReady = ready.then(() => undefined);
+            const { notes, chunks, ms } = await ready;
+            const summary = `${notes} notes, ${chunks} chunks indexed in ${ms} ms.`;
+            indexSetting.setDesc(summary);
+            new Notice(`Reasoning search: ${summary}`);
+          } catch (err) {
+            new Notice(`Reasoning search: rebuild failed (${err instanceof Error ? err.message : String(err)})`, 8000);
+          } finally {
+            b.setDisabled(false).setButtonText("Rebuild");
+          }
         }),
       );
   }
