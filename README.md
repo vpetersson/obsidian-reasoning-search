@@ -141,7 +141,24 @@ To try it in a vault, symlink or copy `main.js`, `manifest.json` and `styles.css
 bun run release           # patch bump; or: minor | major | 1.2.3
 ```
 
-This bumps `manifest.json`, `package.json` and `versions.json`, runs the tests, builds, and writes `release/reasoning-search-<version>.zip`. To publish, commit, tag with the bare version (e.g. `0.1.1`) and attach `main.js`, `manifest.json` and `styles.css` to a GitHub release.
+This bumps `manifest.json`, `package.json` and `versions.json`, runs the tests and builds. It also writes `release/reasoning-search-<version>.zip` for manual installs.
+
+To publish, commit and push a tag with the bare version, with no `v` prefix:
+
+```sh
+git commit -am "Release 0.1.1" && git tag 0.1.1 && git push origin HEAD 0.1.1
+```
+
+The [release workflow](.github/workflows/release.yml) checks that the tag matches `manifest.json`, then runs the type check, tests and build. It publishes a GitHub release with `main.js`, `manifest.json` and `styles.css` attached as separate files. That's the layout Obsidian's community plugin store and [BRAT](https://github.com/TfTHacker/obsidian42-brat) install from; they don't use the zip.
+
+### Listing in the community plugin store
+
+This is a one-time manual step after the first release:
+
+1. Open a PR to [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases) adding the plugin to `community-plugins.json`, with `id` `reasoning-search` and `repo` `vpetersson/obsidian-reasoning-search`.
+2. Obsidian's review bot checks the manifest and the latest release.
+
+After the PR is accepted, the store picks up each new tagged release on its own.
 
 ## Non-goals
 
