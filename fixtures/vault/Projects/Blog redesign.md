@@ -1,0 +1,1 @@
+Switch the static site generator to Astro, add dark mode, fix RSS feed.

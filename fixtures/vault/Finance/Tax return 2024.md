@@ -1,0 +1,1 @@
+Gathered P60, dividend statements, and charity receipts. Filed in January.

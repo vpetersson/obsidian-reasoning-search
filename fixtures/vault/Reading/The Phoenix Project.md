@@ -1,0 +1,1 @@
+A novel about IT operations and DevOps. The Three Ways: flow, feedback, continual learning.
