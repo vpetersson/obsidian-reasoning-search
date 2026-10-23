@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Bm25Index } from "../src/bm25";
 import { type Chunk, chunkNote } from "../src/chunker";
-import { EndpointUnreachableError, type Http, LlmClient } from "../src/llm";
+import { EndpointUnreachableError, type Http, LlmClient, ModelNotFoundError } from "../src/llm";
 import { planRerank, promptTokens, rerankMessages } from "../src/prompts";
 import { fuse, reasoningSearch, resolveCandidate } from "../src/search";
 
@@ -189,5 +189,51 @@ describe("fuse", () => {
     expect(fused.map((f) => f.chunk.path)).toEqual(["a.md", "b.md"]);
     expect(fused[0]?.chunk).toBe(a2);
     expect(fused[0]?.matched).toEqual([a2, a1]);
+  });
+});
+
+describe("model not found", () => {
+  const server = (notFoundBody: string): Http => async (req) => {
+    if (req.method === "GET") {
+      expect(req.url).toBe("http://127.0.0.1:11434/v1/models");
+      return { status: 200, text: JSON.stringify({ object: "list", data: [{ id: "qwen3.5:9b" }, { id: "gemma2:9b" }] }) };
+    }
+    return { status: 404, text: notFoundBody };
+  };
+
+  test.each([
+    ["Ollama", '{"error":{"message":"model \'llama3.1:8b\' not found","type":"not_found_error","param":null,"code":null}}'],
+    ["apfel", '{"error":{"code":"model_not_found","message":"The model \'llama3.1:8b\' does not exist.","type":"invalid_request_error"}}'],
+  ])("%s 404 becomes ModelNotFoundError listing available models", async (_name, body) => {
+    const llm = new LlmClient(server(body), { ...config, model: "llama3.1:8b" });
+    const err = await llm.chat([{ role: "user", content: "hi" }], { maxTokens: 5 }).catch((e) => e);
+    expect(err).toBeInstanceOf(ModelNotFoundError);
+    expect(err.message).toBe('Model "llama3.1:8b" isn\'t available at http://127.0.0.1:11434/v1. Available: gemma2:9b, qwen3.5:9b.');
+  });
+
+  test("suggests pulling the model when the server lists none", async () => {
+    const http: Http = async (req) =>
+      req.method === "GET" ? { status: 500, text: "" } : { status: 404, text: '{"error":{"message":"model \'x\' not found"}}' };
+    const err = await new LlmClient(http, { ...config, model: "x" }).chat([{ role: "user", content: "hi" }], { maxTokens: 5 }).catch((e) => e);
+    expect(err.message).toContain("ollama pull x");
+  });
+
+  test("search falls back to BM25 with the model hint in the message", async () => {
+    const llm = new LlmClient(server('{"error":{"message":"model \'llama3.1:8b\' not found"}}'), { ...config, model: "llama3.1:8b" });
+    const outcome = await reasoningSearch("restic", { index: buildIndex(), llm, candidateCount: 15, fallbackToBm25: true });
+    expect(outcome.fallback?.message).toBe(
+      'Reasoning search: Model "llama3.1:8b" isn\'t available at http://127.0.0.1:11434/v1. Available: gemma2:9b, qwen3.5:9b',
+    );
+    expect(outcome.results[0]?.source).toBe("bm25");
+  });
+
+  test("listModels sends the API key and tolerates a missing data array", async () => {
+    let auth: string | undefined;
+    const http: Http = async (req) => {
+      auth = req.headers.Authorization;
+      return { status: 200, text: "{}" };
+    };
+    expect(await new LlmClient(http, { ...config, apiKey: "sk-1" }).listModels()).toEqual([]);
+    expect(auth).toBe("Bearer sk-1");
   });
 });

@@ -50,7 +50,7 @@ ollama serve               # if it isn't already running
 Settings:
 
 - **Base URL:** `http://127.0.0.1:11434/v1`
-- **Model:** the model tag, e.g. `qwen3.5:9b`
+- **Model:** a model you've already pulled, e.g. `qwen3.5:9b`. The dropdown next to the field lists the models the server actually has.
 - **API key:** blank
 
 You don't need to set `OLLAMA_ORIGINS`. The plugin uses Obsidian's `requestUrl`, which isn't subject to browser CORS.
@@ -77,7 +77,7 @@ On Ollama, larger-context models don't need these limits, but they don't hurt ei
 | Setting | Default | |
 | --- | --- | --- |
 | Base URL | `http://127.0.0.1:11434/v1` | OpenAI-compatible base, including `/v1` |
-| Model | `apple-foundationmodel` | |
+| Model | `apple-foundationmodel` | Type a name or pick from the models the endpoint lists (`GET /models`) |
 | API key | blank | Sent as `Authorization: Bearer …` when set |
 | Request timeout | 60 s | Per LLM call; a timeout counts as unreachable |
 | Disable model thinking | on | Sends `reasoning_effort: "none"` |

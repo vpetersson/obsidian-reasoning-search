@@ -1,6 +1,6 @@
 import type { Bm25Index, Hit } from "./bm25";
 import type { Chunk } from "./chunker";
-import { EndpointUnreachableError, type LlmClient } from "./llm";
+import { EndpointUnreachableError, type LlmClient, ModelNotFoundError } from "./llm";
 import { parseQueries, parseRerank, type RerankItem } from "./parse";
 import { expansionMessages, planRerank, rerankMessages } from "./prompts";
 
@@ -94,6 +94,7 @@ function bm25Results(hits: Hit[]): SearchResult[] {
 
 function failureMessage(err: unknown): string {
   if (err instanceof EndpointUnreachableError) return `Reasoning search: can't reach LLM endpoint at ${err.url}`;
+  if (err instanceof ModelNotFoundError) return `Reasoning search: ${err.message.replace(/\.$/, "")}`;
   return `Reasoning search: LLM call failed (${err instanceof Error ? err.message : String(err)})`;
 }
 

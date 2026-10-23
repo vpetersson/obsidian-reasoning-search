@@ -49,8 +49,27 @@ export class LlmResponseError extends Error {
   }
 }
 
+/** The server is up but doesn't have the configured model (e.g. not pulled in Ollama). */
+export class ModelNotFoundError extends LlmResponseError {
+  constructor(
+    readonly model: string,
+    readonly baseUrl: string,
+    readonly available: string[],
+  ) {
+    const hint = available.length
+      ? `Available: ${available.join(", ")}.`
+      : `Pull it first (for Ollama: ollama pull ${model}).`;
+    super(`Model "${model}" isn't available at ${baseUrl}. ${hint}`, 404);
+    this.name = "ModelNotFoundError";
+  }
+}
+
+function trimBase(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, "");
+}
+
 export function completionsUrl(baseUrl: string): string {
-  return `${baseUrl.trim().replace(/\/+$/, "")}/chat/completions`;
+  return `${trimBase(baseUrl)}/chat/completions`;
 }
 
 export class LlmClient {
@@ -83,6 +102,10 @@ export class LlmClient {
         return this.chat(messages, opts);
       }
     }
+    if (res.status === 404 && /model/i.test(res.text)) {
+      const available = await this.listModels().catch(() => []);
+      throw new ModelNotFoundError(this.config.model, trimBase(this.config.baseUrl), available);
+    }
     if (res.status < 200 || res.status >= 300) {
       throw new LlmResponseError(`LLM endpoint returned HTTP ${res.status}: ${res.text.slice(0, 200)}`, res.status);
     }
@@ -106,6 +129,31 @@ export class LlmClient {
       );
     }
     return content;
+  }
+
+  /** Model ids from the OpenAI-compatible `GET /models` (Ollama, apfel and LM Studio all serve it). */
+  async listModels(): Promise<string[]> {
+    const url = `${trimBase(this.config.baseUrl)}/models`;
+    const headers: Record<string, string> = {};
+    if (this.config.apiKey.trim()) headers.Authorization = `Bearer ${this.config.apiKey.trim()}`;
+    let res: HttpResponse;
+    try {
+      res = await this.http({ url, method: "GET", headers });
+      if (res.status === 0) throw new Error("no response");
+    } catch (err) {
+      throw new EndpointUnreachableError(url, err);
+    }
+    if (res.status < 200 || res.status >= 300) throw new LlmResponseError(`GET ${url} returned HTTP ${res.status}`, res.status);
+    try {
+      const data = JSON.parse(res.text)?.data;
+      if (!Array.isArray(data)) return [];
+      return data
+        .map((m: { id?: unknown }) => m?.id)
+        .filter((id: unknown): id is string => typeof id === "string")
+        .sort();
+    } catch {
+      throw new LlmResponseError(`GET ${url} returned a non-JSON body`, res.status);
+    }
   }
 
   private async send(messages: ChatMessage[], maxTokens: number, json: boolean, noThinking: boolean): Promise<HttpResponse> {
